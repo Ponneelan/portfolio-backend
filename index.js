@@ -6,8 +6,9 @@ require('dotenv').config()
 
 
 http.createServer(function (req, res) {
-    res.writeHead(200, {'Content-Type': 'text/html'});
-    
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+
     var q = url.parse(req.url, true);
     let queryData = q.query;
 
@@ -16,12 +17,12 @@ http.createServer(function (req, res) {
     let message = queryData.message;
     let name = queryData.name;
 
-     // create a transporter object
-     let transporter = nodemailer.createTransport({
-        service:'gmail',
+    // create a transporter object
+    let transporter = nodemailer.createTransport({
+        service: 'gmail',
         host: 'smtp.gmail.com',
         port: 465,
-        secure:false,
+        secure: false,
         auth: {
             user: process.env.mailId,
             pass: process.env.password
@@ -32,19 +33,28 @@ http.createServer(function (req, res) {
     let mailOptions = {
         from: mail,
         to: process.env.mailId,
-        subject: '#Portfolio '+subject,
-        text: `Hi\n this is ${name}\n\n ${message}\n\nRegards,\n${mail}`
+        subject: '#Portfolio ' + subject,
+        text: `Hi\nthis is ${name}\n\n${message}\n\nRegards,\n${mail}`
     };
 
     // send mail with defined transport object
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.log('Error :'+error);
-           
-        } else {
-            console.log('Email sent: ' + info.response);
-        }
-    });
+    let response = {}
 
-    res.end();
-  }).listen(8000);
+    transporter.sendMail(mailOptions)
+        .then(function (info) {
+            console.log('Email sent: ' + info.response);
+            response['code'] = 200;
+            response['message'] = 'Mail Sent';
+        })
+        .catch(function (error) {
+            console.log('Error occurred: ' + error.message);
+            response['code'] = 404;
+            response['message'] = 'server Error';
+        }).then(function (){
+            console.log(response);
+            res.end(JSON.stringify(response));
+        });
+
+}).listen(8000, () => {
+    console.log("server Running on http://localhost:8000");
+});
