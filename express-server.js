@@ -1,8 +1,8 @@
 const express = require('express');
-const url = require('url');
 const modules = require('./modules');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 require('dotenv').config()
 
 
@@ -11,6 +11,7 @@ app.use(cors({
     origin: '*'
 }));
 app.use(express.json());
+app.use(bodyParser.json());
 
 const connection = mysql.createPool({
     host: process.env.HOST,
@@ -20,16 +21,14 @@ const connection = mysql.createPool({
     port: process.env.PORT
 });
 
-app.get('/sentmail', async (req, res) => {
+app.post('/getdata', async (req, res) => {
     res.set('Content-Type', 'application/json');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    var q = url.parse(req.url, true);
 
-    let queryData = q.query;
-    let mail = queryData.mail;
-    let subject = queryData.subject;
-    let message = queryData.message;
-    let name = queryData.name;
+    let mail = req.body.mail;
+    let subject = req.body.subject;
+    let message = req.body.message;
+    let name = req.body.name;
 
     let mailOptions = {
         from: mail,
