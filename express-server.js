@@ -1,6 +1,6 @@
 const express = require('express');
-const modules = require('./modules');
-const mysql = require('mysql2/promise');
+const emailModule = require('./emailModules');
+const supabase = require('./supabase');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 require('dotenv').config()
@@ -12,15 +12,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(bodyParser.json());
-
-const connection = mysql.createPool({
-    host: process.env.HOST,
-    user: process.env.USER_NAME,
-    password: process.env.PASSWORD,
-    database: process.env.DATABASE,
-    port: process.env.PORT
-});
-
+ 
 app.post('/getdata', async (req, res) => {
     res.set('Content-Type', 'application/json');
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -40,11 +32,19 @@ app.post('/getdata', async (req, res) => {
     let response = {};
 
     // Insert a new record into the database
-    const result = await connection.query(
-        'INSERT INTO PortfolioMessage (name, email, summary, message, updated_by, created_by) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, mail, subject, message, mail, mail]
-    ).then(() => {
-        modules.transporter.sendMail(mailOptions)
+    
+    await supabase.client
+    .from(process.env.DATABASE_NAME)
+    .insert(
+        {   
+            name: name,
+            email: mail,
+            summary:subject,
+            message:message,
+        },)
+   
+    .then(() => {
+        emailModule.transporter.sendMail(mailOptions)
             .then(function (info) {
                 console.log('Email sent: ' + info.response);
                 response['code'] = 200;
